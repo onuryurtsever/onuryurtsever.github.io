@@ -1,7 +1,65 @@
-<html>
-<body>
+<p>Merhaba,</p>
 
-<p>Hello World xD</p>
 
-</body>
-</html>
+
+<p>Bazen MongoDB&#8217;de bir collection üzerinde sorgulama yapmak istediğimiz zaman aynı sorguyu PyMongo kütüphanesi ile de kullanmak isteyebiliriz.</p>
+
+
+
+<p>Dilerseniz aşağıdaki basit örneği beraber inceleyelim. MongoDB sorgulamaları için ücretsiz bir araç olan Robo 3T kullanıyoruz.</p>
+
+
+
+<p>Diyelim ki Telemetry adında bir collection&#8217;ımız var ve bu collection üzerinde Code alanı 5417&#8217;ye eşit olan ve kayıt yaratılma tarihi 1 Ocak 2020&#8217;den büyük olan verilerin gelmesini istiyoruz.</p>
+
+
+
+<p>SQL tabiriyle &#8211;&gt; <span class="has-inline-color has-vivid-cyan-blue-color">WHERE</span> <span class="has-inline-color has-vivid-red-color">Code</span><span class="has-inline-color has-luminous-vivid-orange-color">=</span><span class="has-inline-color has-vivid-purple-color">5417</span> <span class="has-inline-color has-vivid-green-cyan-color">AND </span><span class="has-inline-color has-vivid-red-color">createdDate</span><span class="has-inline-color has-luminous-vivid-orange-color">&gt;=</span>&#8216;<span class="has-inline-color has-vivid-purple-color">2020-01-01</span>&#8216;</p>
+
+
+
+<p>Bunu MongoDB&#8217;de şu şekilde sorguluyoruz.</p>
+
+
+
+<p><span class="has-inline-color has-very-dark-gray-color">db.getCollection</span><span class="has-inline-color has-luminous-vivid-orange-color">(</span><span class="has-inline-color has-vivid-green-cyan-color">&#8216;Telemetry</span><span class="has-inline-color has-luminous-vivid-orange-color">&#8216;)</span>.find<span class="has-inline-color has-luminous-vivid-orange-color">({</span>$and<span class="has-inline-color has-luminous-vivid-orange-color">:[{</span><span class="has-inline-color has-vivid-red-color">&#8220;createdDate&#8221;</span> <span class="has-inline-color has-luminous-vivid-orange-color">: {</span>&#8220;$gte&#8221;<span class="has-inline-color has-luminous-vivid-orange-color">:</span> <span class="has-inline-color has-vivid-cyan-blue-color">new Date</span><span class="has-inline-color has-luminous-vivid-orange-color">(</span>&#8220;<span class="has-inline-color has-vivid-purple-color">2020-01-01T00:00:00.000Z</span>&#8220;<span class="has-inline-color has-luminous-vivid-orange-color">)}}</span>,<span class="has-inline-color has-luminous-vivid-orange-color">{</span>&#8220;<span class="has-inline-color has-vivid-red-color">code</span>&#8220;<span class="has-inline-color has-luminous-vivid-orange-color">:</span>&#8220;<span class="has-inline-color has-vivid-purple-color">5417</span>&#8220;<span class="has-inline-color has-luminous-vivid-orange-color">}]})</span></p>
+
+
+
+<div class="wp-block-image"><figure class="aligncenter size-full"><a href="https://www.onuryurtsever.com.tr/wp-content/uploads/mongodb.png" data-rel="lightbox-image-0" data-rl_title="" data-rl_caption="" title=""><img loading="lazy" width="1140" height="342" src="https://www.onuryurtsever.com.tr/wp-content/uploads/mongodb.png" alt="" class="wp-image-1700" srcset="https://www.onuryurtsever.com.tr/wp-content/uploads/mongodb.png 1140w, https://www.onuryurtsever.com.tr/wp-content/uploads/mongodb-300x90.png 300w, https://www.onuryurtsever.com.tr/wp-content/uploads/mongodb-1024x307.png 1024w, https://www.onuryurtsever.com.tr/wp-content/uploads/mongodb-768x230.png 768w" sizes="(max-width: 1140px) 100vw, 1140px" /></a></figure></div>
+
+
+
+<p>Ancak bu sorguyu direk olarak PyMongo ile kullanmak istediğinizde tarih için kullandığımız New Date ya da ISODate fonksiyonu çalışmayacaktır. </p>
+
+
+
+<p>Bunun için Python&#8217;un dateutil kütüphanesini kullanmamız gerekir.</p>
+
+
+<div class="wp-block-syntaxhighlighter-code "><pre class="brush: python; title: ; notranslate" title="">
+from pymongo import MongoClient
+
+import dateutil
+dateStr = '2020-01-01T00:00:00.000Z'
+myDatetime = dateutil.parser.parse(dateStr)
+
+client = MongoClient('mongodb://ip_address:port', username='user', password='pass', authSource='admin')
+
+IOTCloud = client.get_database('IOTCloud')
+
+telemetry = IOTCloud.Telemetry
+
+datapoints = list(telemetry.find({&quot;$and&quot;:&#91;{&quot;createdDate&quot; : {&quot;$gte&quot;: dateutil.parser.parse(dateStr)}},{&quot;code&quot;:&quot;5417&quot;}]}))
+</pre></div>
+
+
+<div class="wp-block-image"><figure class="aligncenter size-full"><a href="httphttps://www.onuryurtsever.com.tr/wp-content/uploads/pymongo-1.png" data-rel="lightbox-image-1" data-rl_title="" data-rl_caption="" title=""><img loading="lazy" width="1151" height="451" src="https://www.onuryurtsever.com.tr/wp-content/uploads/pymongo-1.png" alt="" class="wp-image-1702" srcset="https://www.onuryurtsever.com.tr/wp-content/uploads/pymongo-1.png 1151w, https://www.onuryurtsever.com.tr/wp-content/uploads/pymongo-1-300x118.png 300w, https://www.onuryurtsever.com.tr/wp-content/uploads/pymongo-1-1024x401.png 1024w, https://www.onuryurtsever.com.tr/wp-content/uploads/pymongo-1-768x301.png 768w" sizes="(max-width: 1151px) 100vw, 1151px" /></a></figure></div>
+
+
+
+<p>Artık sonuçlara filtreli bir şekilde PyMongo ile de erişebilirsiniz.</p>
+
+
+
+<p>Kolay gelsin 🙂</p>
